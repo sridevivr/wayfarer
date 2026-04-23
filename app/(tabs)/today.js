@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Card from '../../components/Card';
+import GlowPulse from '../../components/GlowPulse';
 import MapPlaceholder from '../../components/MapPlaceholder';
 import ProgressBar from '../../components/ProgressBar';
 import StoryRow from '../../components/StoryRow';
@@ -50,8 +51,10 @@ function ActiveToday({ onResetGoal }) {
           <Text style={[type.label, styles.heroLabel]}>You are currently in</Text>
           <Text style={[type.h1, styles.heroTitle]}>{goal.currentLocation}</Text>
           <View style={styles.heroSubRow}>
-            <View style={styles.heroDot} />
-            <Text style={type.body}>
+            <GlowPulse style={styles.heroDotWrap}>
+              <View style={styles.heroDot} />
+            </GlowPulse>
+            <Text style={[type.body, styles.heroSubText]}>
               On your way to {shortName(goal.destination)} · {goal.daysRemaining} days to go
             </Text>
           </View>
@@ -98,7 +101,9 @@ function ActiveToday({ onResetGoal }) {
                       <Text style={styles.storyTitle}>{unread.title}</Text>
                       <Text style={[type.bodySmall, styles.storySub]}>A story is waiting for you</Text>
                     </View>
-                    <Text style={styles.storyGlyph}>◈</Text>
+                    <GlowPulse>
+                      <Text style={styles.storyGlyph}>◈</Text>
+                    </GlowPulse>
                   </View>
                 </Card>
               )}
@@ -203,12 +208,22 @@ const styles = StyleSheet.create({
   },
   heroLabel: { marginBottom: 6 },
   heroTitle: { marginBottom: 6, fontSize: 22, lineHeight: 28 },
-  heroSubRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heroSubRow: { flexDirection: 'row', alignItems: 'center' },
+  heroSubText: { flexShrink: 1 },
+  heroDotWrap: {
+    marginRight: 8,
+    flexShrink: 0,
+  },
   heroDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.ochre.base,
+    shadowColor: colors.ochre.base,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+    elevation: 4,
   },
 
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
@@ -265,6 +280,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: colors.ochre.base,
     marginLeft: 8,
+    textShadowColor: colors.ochre.base,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
 
   divider: {
