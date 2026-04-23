@@ -25,3 +25,29 @@ jest.mock('react-native-safe-area-context', () => {
     useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
   };
 });
+
+// react-native-svg's primitives reach into native code on import. Stub
+// every element we use as a passthrough View so render trees stay
+// inspectable in tests.
+jest.mock('react-native-svg', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const stub = (name) => {
+    const C = ({ children, ...rest }) => React.createElement(View, { testID: name, ...rest }, children);
+    C.displayName = name;
+    return C;
+  };
+  return {
+    __esModule: true,
+    default: stub('Svg'),
+    Svg: stub('Svg'),
+    Circle: stub('Circle'),
+    Defs: stub('Defs'),
+    G: stub('G'),
+    Line: stub('Line'),
+    LinearGradient: stub('LinearGradient'),
+    Path: stub('Path'),
+    Rect: stub('Rect'),
+    Stop: stub('Stop'),
+  };
+});

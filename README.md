@@ -93,7 +93,7 @@ Build order is fixed by the tech spec (§9). Always leave the app working.
 - [x] **M1 — Environment setup.** Blank Wayfarer splash on the phone via Expo Go.
 - [x] **M2 — Navigation skeleton.** Three tabs switch on device; every PRD screen exists as a reachable placeholder.
 - [x] **M3 — Onboarding UI.** All 5 onboarding screens rendered with the visual design, Lora + DM Sans loaded, reusable Button / Card / Tag / OnboardingBar.
-- [ ] M4 — Today + Journey UI. Dummy-data version of the core loop.
+- [x] **M4 — Today + Journey UI.** Dummy-data Today (active + empty), Journey map preview, StoryCard reader, JourneyStats. New reusable components: ProgressBar, MapPlaceholder, StatTile, StoryRow. All numbers route through `constants/mockData.js`, swapped for AsyncStorage in M5.
 - [ ] M5 — Fitbit integration. Real OAuth + step count.
 - [ ] M6 — Goal setup + maps. Destination search, Directions API, real route on a map.
 - [ ] M7 — Progress tracking. Daily sync, marker moves.
