@@ -24,7 +24,8 @@ const DEFAULT_VALUE = 'Hanover, New Hampshire';
 
 // Returns true if the input text corresponds to a given suggestion (loose
 // match — either exact, or the suggestion's city appears in the free text).
-function matchesSuggestion(value, suggestion) {
+// Exported for unit tests; not part of the screen's public surface.
+export function matchesSuggestion(value, suggestion) {
   if (!value) return false;
   const [city] = suggestion.split(',');
   return value.toLowerCase().includes(city.trim().toLowerCase());

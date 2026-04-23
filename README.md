@@ -59,6 +59,20 @@ npx expo start
 
 Scan the QR in the terminal with the iPhone Camera app and tap the Expo Go prompt. If the phone and Mac can't see each other, use `npx expo start --tunnel`.
 
+## Tests
+
+Jest + React Native Testing Library. `__tests__/` mirrors the source tree —
+`components/Button.js` → `__tests__/components/Button.test.js`, and so on.
+
+```bash
+npm test            # one-shot
+npm run test:watch  # watch mode
+```
+
+Each milestone ships with tests covering rendering, navigation intents, and
+pure logic (step calculations, matchers, reducers). New components and
+services don't land without a corresponding `*.test.js`.
+
 ## Environment variables
 
 Copy `.env.example` to `.env` and fill in. Not needed until Milestone 5+.
