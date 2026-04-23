@@ -52,12 +52,15 @@ const stackScreenOptions = {
 const OnboardingStackNav = createNativeStackNavigator();
 function OnboardingStack() {
   return (
-    <OnboardingStackNav.Navigator screenOptions={stackScreenOptions} initialRouteName="Splash">
-      <OnboardingStackNav.Screen name="Splash" component={SplashScreen} options={{ title: 'Welcome' }} />
-      <OnboardingStackNav.Screen name="FitbitConnect" component={FitbitConnectScreen} options={{ title: 'Connect Fitbit' }} />
-      <OnboardingStackNav.Screen name="StrideConfirm" component={StrideConfirmScreen} options={{ title: 'Your Stride' }} />
-      <OnboardingStackNav.Screen name="OnboardHome" component={OnboardHomeScreen} options={{ title: 'Home' }} />
-      <OnboardingStackNav.Screen name="OnboardPlaces" component={OnboardPlacesScreen} options={{ title: 'Places' }} />
+    <OnboardingStackNav.Navigator
+      screenOptions={{ ...stackScreenOptions, headerShown: false }}
+      initialRouteName="Splash"
+    >
+      <OnboardingStackNav.Screen name="Splash" component={SplashScreen} />
+      <OnboardingStackNav.Screen name="FitbitConnect" component={FitbitConnectScreen} />
+      <OnboardingStackNav.Screen name="StrideConfirm" component={StrideConfirmScreen} />
+      <OnboardingStackNav.Screen name="OnboardHome" component={OnboardHomeScreen} />
+      <OnboardingStackNav.Screen name="OnboardPlaces" component={OnboardPlacesScreen} />
     </OnboardingStackNav.Navigator>
   );
 }

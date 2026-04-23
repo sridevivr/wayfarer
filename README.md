@@ -25,10 +25,10 @@ app/
   completion/     celebration, photo upload, share card
   journey/        journey sub-screens: story card reader, stats
   explore/        explore sub-screens: monthly summary
-components/       reusable UI (PlaceholderScreen today; Card/Button/MapView/... later)
+components/       reusable UI: Button, Card, Tag, OnboardingBar, PlaceholderScreen (MapView/StoryCard later)
 services/         fitbit.js, maps.js, storytelling.js
 storage/          AsyncStorage helpers
-constants/        colors.js (fonts, endpoints land later)
+constants/        colors.js, fonts.js (endpoints land later)
 hooks/            useFitbit, useGoal, useStoryCards
 assets/           fonts, icons, images
 docs/             PRD, tech spec, wireframes, visual design
@@ -78,7 +78,7 @@ Build order is fixed by the tech spec (§9). Always leave the app working.
 
 - [x] **M1 — Environment setup.** Blank Wayfarer splash on the phone via Expo Go.
 - [x] **M2 — Navigation skeleton.** Three tabs switch on device; every PRD screen exists as a reachable placeholder.
-- [ ] M3 — Onboarding UI. 5 onboarding screens with the visual design applied.
+- [x] **M3 — Onboarding UI.** All 5 onboarding screens rendered with the visual design, Lora + DM Sans loaded, reusable Button / Card / Tag / OnboardingBar.
 - [ ] M4 — Today + Journey UI. Dummy-data version of the core loop.
 - [ ] M5 — Fitbit integration. Real OAuth + step count.
 - [ ] M6 — Goal setup + maps. Destination search, Directions API, real route on a map.
