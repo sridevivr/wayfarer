@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { colors } from '../constants/colors';
 import { type } from '../constants/fonts';
 
@@ -27,9 +27,7 @@ export default function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled }}
     >
-      <View pointerEvents="none">
-        <Text style={[type.button, styles[`${variant}Label`]]}>{label}</Text>
-      </View>
+      <Text style={[type.button, styles[`${variant}Label`]]}>{label}</Text>
     </Pressable>
   );
 }
