@@ -55,7 +55,7 @@ export default function OnboardHomeScreen() {
 
           <Text style={[type.label, styles.fieldLabel]}>Your hometown</Text>
           <View style={styles.inputWrap}>
-            <Ionicons name="location-outline" size={16} color={colors.text.dim} />
+            <Ionicons name="search-outline" size={16} color={colors.text.dim} />
             <TextInput
               value={hometown}
               onChangeText={setHometown}
