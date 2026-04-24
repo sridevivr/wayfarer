@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import {
-  makeRedirectUri,
   ResponseType,
   useAuthRequest,
 } from 'expo-auth-session';
+import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -37,19 +37,32 @@ const discovery = {
   tokenEndpoint: FITBIT_TOKEN_URL,
 };
 
+// Expo Go exposes the dev-server host as `hostUri` on the constants
+// manifest. When it's present, we're running under Expo Go and need
+// `exp://<host>/--/<path>` to round-trip back into the JS bundle.
+// Otherwise we're in a standalone build and use the app's own scheme.
+export function buildRedirectUri(path) {
+  const hostUri =
+    Constants.expoGoConfig?.hostUri ??
+    Constants.expoConfig?.hostUri ??
+    Constants.manifest?.hostUri ??
+    Constants.manifest2?.extra?.expoClient?.hostUri;
+  if (hostUri) return `exp://${hostUri}/--/${path}`;
+  return `wayfarer://${path}`;
+}
+
 export default function FitbitConnectScreen() {
   const navigation = useNavigation();
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  // `native:` routes correctly in both environments: in Expo Go it
-  // returns `exp://LAN-IP:8081/--/fitbit-auth` (because Expo Go can't
-  // handle custom schemes, and makeRedirectUri auto-detects the dev
-  // URL), and in a standalone EAS build it returns the value verbatim
-  // (`wayfarer://fitbit-auth`). Passing `scheme:` instead forces the
-  // custom scheme in Expo Go too, which Fitbit then rejects because
-  // that URI never actually routes back into Expo Go.
-  const redirectUri = makeRedirectUri({ native: 'wayfarer://fitbit-auth' });
+  // Build the redirect URI deterministically. makeRedirectUri() drops
+  // the path in Expo Go when `native:` is set, and forces the custom
+  // scheme (which Expo Go can't route) when `scheme:` is set — either
+  // way Fitbit rejects it. Construct the URI ourselves:
+  //   - Expo Go: `exp://<hostUri>/--/fitbit-auth` (hostUri == LAN:port)
+  //   - Standalone EAS build: `wayfarer://fitbit-auth`
+  const redirectUri = buildRedirectUri('fitbit-auth');
 
   // Surface the exact value Fitbit will see — both in Metro and on
   // screen — so a redirect-URI mismatch shows what to register.

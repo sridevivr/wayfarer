@@ -71,6 +71,19 @@ jest.mock('expo-web-browser', () => ({
   maybeCompleteAuthSession: jest.fn(),
 }));
 
+// expo-constants reaches into the native runtime for the manifest.
+// Default to an empty config — individual tests can override it by
+// re-requiring and mutating before rendering.
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    expoGoConfig: null,
+    expoConfig: null,
+    manifest: null,
+    manifest2: null,
+  },
+}));
+
 // react-native-svg's primitives reach into native code on import. Stub
 // every element we use as a passthrough View so render trees stay
 // inspectable in tests.
