@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "test": "jest",
     "test:watch": "jest --watch",
-    "build:dev": "eas build --profile development --platform ios"
+    "prebuild": "expo prebuild --platform ios",
+    "prebuild:clean": "expo prebuild --platform ios --clean"
   },
   "jest": {
     "preset": "jest-expo",
