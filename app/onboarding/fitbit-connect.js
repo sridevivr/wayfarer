@@ -79,6 +79,32 @@ export default function FitbitConnectScreen() {
     discovery
   );
 
+  // Log everything Fitbit will see when the auth URL is ready. Split
+  // into discrete parts so a missing/mangled param is easy to spot
+  // instead of being buried in one long string.
+  useEffect(() => {
+    if (!__DEV__ || !request?.url) return;
+    const clientId = process.env.EXPO_PUBLIC_FITBIT_CLIENT_ID ?? '';
+    const maskedId =
+      clientId.length > 4
+        ? `${clientId.slice(0, 2)}…${clientId.slice(-2)} (len=${clientId.length})`
+        : `EMPTY (len=${clientId.length})`;
+    try {
+      const u = new URL(request.url);
+      console.log('[Fitbit OAuth] ---------------------');
+      console.log('[Fitbit OAuth] authorize URL:', request.url);
+      console.log('[Fitbit OAuth] client_id:', u.searchParams.get('client_id'), '(env:', maskedId, ')');
+      console.log('[Fitbit OAuth] response_type:', u.searchParams.get('response_type'));
+      console.log('[Fitbit OAuth] redirect_uri:', u.searchParams.get('redirect_uri'));
+      console.log('[Fitbit OAuth] scope:', u.searchParams.get('scope'));
+      console.log('[Fitbit OAuth] code_challenge_method:', u.searchParams.get('code_challenge_method'));
+      console.log('[Fitbit OAuth] code_challenge present:', !!u.searchParams.get('code_challenge'));
+      console.log('[Fitbit OAuth] state present:', !!u.searchParams.get('state'));
+    } catch (e) {
+      console.log('[Fitbit OAuth] could not parse request.url:', request.url);
+    }
+  }, [request?.url]);
+
   useEffect(() => {
     if (response?.type === 'success' && request?.codeVerifier) {
       handleSuccess(response.params.code, request.codeVerifier);
