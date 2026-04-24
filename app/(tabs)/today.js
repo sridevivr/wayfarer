@@ -75,6 +75,14 @@ function ActiveToday({ onResetGoal }) {
             <Text style={styles.statNumberOchre}>{steps.toLocaleString('en-US')}</Text>
             <Text style={[type.bodySmall, styles.statUnit]}>steps</Text>
             <ProgressBar pct={avgPct} />
+            {__DEV__ && fb.error ? (
+              <Text style={styles.fbError} selectable>
+                fitbit err {fb.error?.status ?? ''}: {String(fb.error?.message ?? fb.error)}
+              </Text>
+            ) : null}
+            {__DEV__ && fb.connected && fb.todaySteps == null && !fb.error ? (
+              <Text style={styles.fbNote}>loading real steps…</Text>
+            ) : null}
           </Card>
           <Card style={styles.statCard}>
             <Text style={[type.label, styles.statLabel]}>Journey</Text>
@@ -373,5 +381,17 @@ const styles = StyleSheet.create({
     color: colors.ochre.soft,
     fontSize: 12,
     fontFamily: fonts.sans.semibold,
+  },
+  fbError: {
+    marginTop: 6,
+    fontSize: 9,
+    color: colors.terra.base,
+    fontFamily: 'Courier',
+  },
+  fbNote: {
+    marginTop: 6,
+    fontSize: 9,
+    color: colors.text.dim,
+    fontFamily: fonts.sans.regular,
   },
 });

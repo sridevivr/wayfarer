@@ -61,15 +61,21 @@ export async function refreshAccessToken(refreshToken) {
 }
 
 async function authedGet(path, accessToken) {
-  const res = await fetch(`${FITBIT_BASE}${path}`, {
+  const url = `${FITBIT_BASE}${path}`;
+  if (__DEV__) console.log('[fitbit] GET', url);
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
+  if (__DEV__) console.log('[fitbit] GET', url, '→', res.status);
   if (res.status === 401) {
     const err = new FitbitError(401, await res.text().catch(() => ''));
     throw err;
   }
   const json = await res.json().catch(() => null);
-  if (!res.ok) throw new FitbitError(res.status, json);
+  if (!res.ok) {
+    if (__DEV__) console.log('[fitbit] error body:', JSON.stringify(json));
+    throw new FitbitError(res.status, json);
+  }
   return json;
 }
 
@@ -108,6 +114,7 @@ export async function getProfile() {
 export async function getTodaySteps() {
   const json = await withAuth((t) => authedGet('/1/user/-/activities/date/today.json', t));
   const steps = json?.summary?.steps ?? 0;
+  if (__DEV__) console.log('[fitbit] today.json → summary.steps =', steps);
   return { steps };
 }
 
@@ -118,7 +125,9 @@ export async function getStepHistory(endDate, days = 30) {
     authedGet(`/1/user/-/activities/steps/date/${endDate}/${days}d.json`, t)
   );
   const series = json?.['activities-steps'] ?? [];
-  return series.map((d) => Number(d.value) || 0);
+  const parsed = series.map((d) => Number(d.value) || 0);
+  if (__DEV__) console.log('[fitbit] history length =', parsed.length, 'last 3 =', parsed.slice(-3));
+  return parsed;
 }
 
 export { FitbitError };

@@ -42,6 +42,7 @@ function average(arr) {
 
 async function fetchAll() {
   if (inflight) return inflight;
+  if (__DEV__) console.log('[useFitbit] fetchAll starting');
   inflight = (async () => {
     const [profile, today, history] = await Promise.all([
       getProfile(),
@@ -60,6 +61,7 @@ async function fetchAll() {
       dailyAveragePct,
     };
     cache = { data, fetchedAt: Date.now() };
+    if (__DEV__) console.log('[useFitbit] fetchAll success:', data);
     // Persist stride so StrideConfirm can read it without going through
     // a network round-trip.
     await setUser({ strideStepsPerMile: stride });
@@ -96,6 +98,7 @@ export default function useFitbit() {
     let cancelled = false;
     (async () => {
       const tokens = await getTokens();
+      if (__DEV__) console.log('[useFitbit] mount, tokens present:', !!tokens, 'cache hit:', !!cache);
       if (cancelled) return;
       if (!tokens) {
         setConnected(false);
@@ -111,6 +114,7 @@ export default function useFitbit() {
         await fetchAll();
         if (!cancelled) setLoading(false);
       } catch (e) {
+        if (__DEV__) console.log('[useFitbit] fetchAll error:', e?.status, e?.message, e?.body);
         if (!cancelled) {
           setError(e);
           setLoading(false);
