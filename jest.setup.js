@@ -77,6 +77,7 @@ jest.mock('expo-web-browser', () => ({
 jest.mock('expo-constants', () => ({
   __esModule: true,
   default: {
+    executionEnvironment: 'standalone',
     expoGoConfig: null,
     expoConfig: null,
     manifest: null,

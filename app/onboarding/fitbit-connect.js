@@ -37,17 +37,24 @@ const discovery = {
   tokenEndpoint: FITBIT_TOKEN_URL,
 };
 
-// Expo Go exposes the dev-server host as `hostUri` on the constants
-// manifest. When it's present, we're running under Expo Go and need
-// `exp://<host>/--/<path>` to round-trip back into the JS bundle.
-// Otherwise we're in a standalone build and use the app's own scheme.
+// Expo Go owns only `exp://` so we need `exp://<host>/--/<path>` to
+// round-trip. A dev client (or standalone EAS build) owns our own
+// `wayfarer://` scheme, and Fitbit accepts the cleaner custom-scheme
+// form (Fitbit rejects exp://IP:PORT/path entirely, so Expo Go can't
+// actually complete OAuth — dev client is required for M5).
+//
+// `executionEnvironment` is the canonical discriminator: 'storeClient'
+// means Expo Go, anything else (`'standalone'`, `'bare'`) is our own
+// binary.
 export function buildRedirectUri(path) {
-  const hostUri =
-    Constants.expoGoConfig?.hostUri ??
-    Constants.expoConfig?.hostUri ??
-    Constants.manifest?.hostUri ??
-    Constants.manifest2?.extra?.expoClient?.hostUri;
-  if (hostUri) return `exp://${hostUri}/--/${path}`;
+  const inExpoGo = Constants.executionEnvironment === 'storeClient';
+  if (inExpoGo) {
+    const hostUri =
+      Constants.expoGoConfig?.hostUri ??
+      Constants.expoConfig?.hostUri ??
+      Constants.manifest?.hostUri;
+    if (hostUri) return `exp://${hostUri}/--/${path}`;
+  }
   return `wayfarer://${path}`;
 }
 

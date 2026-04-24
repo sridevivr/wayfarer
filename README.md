@@ -48,16 +48,34 @@ Root native-stack → initial route `Main` (bottom tabs). Secondary flows are mo
 
 Every screen is a placeholder rendered by `components/PlaceholderScreen.js` — each lists nav links to its neighbours so you can walk the whole graph on device.
 
-## Run it on your iPhone (Expo Go)
+## Run it on your iPhone
 
-Prereqs on the Mac: Node 24, Expo CLI, EAS CLI, iPhone on the same Wi-Fi. Install Expo Go from the App Store.
+From M5 onward Wayfarer runs in a **custom EAS development client**, not in Expo Go. Fitbit OAuth rejects `exp://IP:PORT/path` redirect URIs, so Expo Go is a dead end for any flow that talks to Fitbit, Google Maps, or Anthropic. The dev client is a thin native binary that owns the `wayfarer://` scheme and otherwise behaves exactly like Expo Go — same QR-scan workflow, same JS reload, just on a binary you built yourself.
+
+Prereqs on the Mac: Node 24, Expo CLI, EAS CLI, `eas login`, iPhone on the same Wi-Fi.
+
+### One-time: build and install the dev client
+
+```bash
+npm run build:dev
+# ≈ 10–15 min on EAS servers; prompts interactively for Apple creds.
+# At the end, EAS prints a QR + install URL. Open the URL on the
+# iPhone in Safari; tap the "Install" button. Trust the developer
+# profile in Settings → General → VPN & Device Management.
+```
+
+You only redo this when native code changes (new plugins, bumped `app.json` scheme, new native module). All JS changes live-reload without rebuilding.
+
+### Daily dev loop
 
 ```bash
 npm install
-npx expo start
+npm start            # = expo start --dev-client
 ```
 
-Scan the QR in the terminal with the iPhone Camera app and tap the Expo Go prompt. If the phone and Mac can't see each other, use `npx expo start --tunnel`.
+Scan the QR with your iPhone's Camera. The dev client you installed opens, connects to Metro, and serves your JS. If the phone and Mac can't see each other, use `npx expo start --dev-client --tunnel`.
+
+`npm run start:go` still boots a classic Expo Go session (non-Fitbit screens work there; Fitbit OAuth doesn't).
 
 ## Tests
 
