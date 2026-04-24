@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { cmToStepsPerMile, STRIDE_FALLBACK } from '../constants/stride';
-import { getProfile, getStepHistory, getTodaySteps } from '../services/fitbit';
+import {
+  getProfile,
+  getStepHistory,
+  getTodaySteps,
+  localISODate,
+} from '../services/fitbit';
 import { clearTokens, getTokens } from '../storage/secureStore';
 import { clearUser, setUser } from '../storage/userStore';
 
@@ -31,10 +36,6 @@ function publish() {
   subscribers.forEach((cb) => cb(s));
 }
 
-function todayISO(now = new Date()) {
-  return now.toISOString().slice(0, 10);
-}
-
 function average(arr) {
   if (!arr.length) return 0;
   return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
@@ -47,7 +48,7 @@ async function fetchAll() {
     const [profile, today, history] = await Promise.all([
       getProfile(),
       getTodaySteps(),
-      getStepHistory(todayISO(), 30),
+      getStepHistory(localISODate(), 30),
     ]);
     const stride = cmToStepsPerMile(profile.strideLengthCm);
     const dailyAverage = average(history);

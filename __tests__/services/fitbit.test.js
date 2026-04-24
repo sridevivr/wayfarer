@@ -6,6 +6,7 @@ import {
   getProfile,
   getStepHistory,
   getTodaySteps,
+  localISODate,
   refreshAccessToken,
 } from '../../services/fitbit';
 import { clearTokens, getTokens, saveTokens } from '../../storage/secureStore';
@@ -82,7 +83,10 @@ describe('getTodaySteps + auth wrapper', () => {
     expect(out).toEqual({ steps: 7421 });
 
     const [url, init] = fetch.mock.calls[0];
-    expect(url).toBe(`${FITBIT_BASE}/1/user/-/activities/date/today.json`);
+    // Uses the real local date (YYYY-MM-DD) rather than the literal
+    // "today" string Fitbit no longer accepts.
+    expect(url).toBe(`${FITBIT_BASE}/1/user/-/activities/date/${localISODate()}.json`);
+    expect(url).not.toMatch(/\/today\.json$/);
     expect(init.headers.Authorization).toBe('Bearer A');
   });
 
@@ -129,7 +133,7 @@ describe('getProfile', () => {
 });
 
 describe('getStepHistory', () => {
-  it('hits the dated 30d endpoint and maps to numeric array', async () => {
+  it('hits the explicit {start}/{end} endpoint (not /30d.json)', async () => {
     await saveTokens({ access: 'A', refresh: 'R' });
     fetch.mockResolvedValueOnce(
       jsonResponse({
@@ -141,8 +145,31 @@ describe('getStepHistory', () => {
     );
     const out = await getStepHistory('2026-04-30', 30);
     expect(out).toEqual([5400, 6800]);
+    // 30 days ending 2026-04-30 → starts on 2026-04-01 (inclusive).
     expect(fetch.mock.calls[0][0]).toBe(
-      `${FITBIT_BASE}/1/user/-/activities/steps/date/2026-04-30/30d.json`
+      `${FITBIT_BASE}/1/user/-/activities/steps/date/2026-04-01/2026-04-30.json`
     );
+    expect(fetch.mock.calls[0][0]).not.toMatch(/30d\.json$/);
+  });
+
+  it('handles a 7-day window correctly', async () => {
+    await saveTokens({ access: 'A', refresh: 'R' });
+    fetch.mockResolvedValueOnce(jsonResponse({ 'activities-steps': [] }));
+    await getStepHistory('2026-04-30', 7);
+    expect(fetch.mock.calls[0][0]).toBe(
+      `${FITBIT_BASE}/1/user/-/activities/steps/date/2026-04-24/2026-04-30.json`
+    );
+  });
+});
+
+describe('localISODate', () => {
+  it('returns YYYY-MM-DD in the local timezone, not UTC', () => {
+    expect(localISODate(new Date(2026, 3, 24, 23, 30))).toBe('2026-04-24');
+    expect(localISODate(new Date(2026, 0, 1, 0, 0))).toBe('2026-01-01');
+    expect(localISODate(new Date(2026, 11, 31, 12, 0))).toBe('2026-12-31');
+  });
+
+  it('zero-pads single-digit months and days', () => {
+    expect(localISODate(new Date(2026, 4, 5))).toBe('2026-05-05');
   });
 });

@@ -12,6 +12,7 @@ jest.mock('../../services/fitbit', () => ({
   getProfile: jest.fn(),
   getTodaySteps: jest.fn(),
   getStepHistory: jest.fn(),
+  localISODate: () => '2026-04-24',
 }));
 
 function Probe({ onState }) {

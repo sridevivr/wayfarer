@@ -9,8 +9,14 @@ import { getTokens, saveTokens, clearTokens } from '../storage/secureStore';
 // Endpoints (tech spec §5):
 //   POST   https://api.fitbit.com/oauth2/token
 //   GET    /1/user/-/profile.json
-//   GET    /1/user/-/activities/date/today.json
-//   GET    /1/user/-/activities/steps/date/{end}/30d.json
+//   GET    /1/user/-/activities/date/{YYYY-MM-DD}.json
+//   GET    /1/user/-/activities/steps/date/{start}/{end}.json
+//
+// Fitbit used to accept the literal string "today" as a date token, but
+// now rejects with 400 "invalid date: today" on both endpoints. Every
+// date we send is an explicit YYYY-MM-DD formatted in the user's local
+// timezone (so the "today" the server sees matches the day on the
+// user's wrist, not UTC).
 
 export const FITBIT_BASE = 'https://api.fitbit.com';
 export const FITBIT_TOKEN_URL = `${FITBIT_BASE}/oauth2/token`;
@@ -18,6 +24,21 @@ export const FITBIT_AUTH_URL = 'https://www.fitbit.com/oauth2/authorize';
 export const FITBIT_SCOPES = ['activity', 'profile'];
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_FITBIT_CLIENT_ID ?? '';
+
+// Local-calendar YYYY-MM-DD. Not toISOString().slice(0,10) — that's UTC
+// and would report tomorrow's date for users behind UTC late at night.
+export function localISODate(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function addDays(d, delta) {
+  const next = new Date(d);
+  next.setDate(d.getDate() + delta);
+  return next;
+}
 
 class FitbitError extends Error {
   constructor(status, body) {
@@ -112,21 +133,29 @@ export async function getProfile() {
 }
 
 export async function getTodaySteps() {
-  const json = await withAuth((t) => authedGet('/1/user/-/activities/date/today.json', t));
+  const date = localISODate();
+  const json = await withAuth((t) => authedGet(`/1/user/-/activities/date/${date}.json`, t));
   const steps = json?.summary?.steps ?? 0;
-  if (__DEV__) console.log('[fitbit] today.json → summary.steps =', steps);
+  if (__DEV__) console.log('[fitbit] daily summary', date, '→ summary.steps =', steps);
   return { steps };
 }
 
-// `endDate` is YYYY-MM-DD. Returns an array of step counts in chronological
-// order. Used by useFitbit to compute the 30-day daily average.
+// Returns an array of step counts in chronological order, `days` entries
+// ending on `endDate` (YYYY-MM-DD local). Used by useFitbit to compute
+// the 30-day daily average.
+//
+// Uses the explicit `{start}/{end}.json` form rather than the legacy
+// `{date}/{period}.json` form — same data, but Fitbit's validator is
+// stricter about the period variant.
 export async function getStepHistory(endDate, days = 30) {
+  const end = new Date(`${endDate}T00:00:00`);
+  const startDate = localISODate(addDays(end, -(days - 1)));
   const json = await withAuth((t) =>
-    authedGet(`/1/user/-/activities/steps/date/${endDate}/${days}d.json`, t)
+    authedGet(`/1/user/-/activities/steps/date/${startDate}/${endDate}.json`, t)
   );
   const series = json?.['activities-steps'] ?? [];
   const parsed = series.map((d) => Number(d.value) || 0);
-  if (__DEV__) console.log('[fitbit] history length =', parsed.length, 'last 3 =', parsed.slice(-3));
+  if (__DEV__) console.log('[fitbit] history', startDate, '→', endDate, 'length =', parsed.length, 'last 3 =', parsed.slice(-3));
   return parsed;
 }
 
