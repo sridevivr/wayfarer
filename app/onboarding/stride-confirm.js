@@ -1,4 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,13 +9,27 @@ import OnboardingBar from '../../components/OnboardingBar';
 import Tag from '../../components/Tag';
 import { colors } from '../../constants/colors';
 import { type } from '../../constants/fonts';
+import { getUser } from '../../storage/userStore';
 
-// Hardcoded for M3. M5 replaces this with the real value from the Fitbit
-// profile endpoint (strideLength.walking).
-const MOCK_STRIDE = 2246;
+// Reads stride from `@user.strideStepsPerMile` (set by FitbitConnect
+// after a successful OAuth + profile fetch). Falls back to the design
+// number if a dev arrives here without going through real OAuth.
+const FALLBACK_STRIDE = 2246;
 
 export default function StrideConfirmScreen() {
   const navigation = useNavigation();
+  const [stride, setStride] = useState(FALLBACK_STRIDE);
+
+  useEffect(() => {
+    let cancelled = false;
+    getUser().then((u) => {
+      if (!cancelled && u?.strideStepsPerMile) setStride(u.strideStepsPerMile);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const onContinue = () => navigation.navigate('OnboardHome');
 
   return (
@@ -29,7 +44,7 @@ export default function StrideConfirmScreen() {
         </Text>
 
         <Card glow style={styles.strideCard}>
-          <Text style={type.number}>{MOCK_STRIDE.toLocaleString()}</Text>
+          <Text style={type.number}>{stride.toLocaleString()}</Text>
           <Text style={[type.body, styles.strideUnit]}>steps per mile</Text>
           <Tag label="From Fitbit profile" color="sage" style={styles.strideTag} />
         </Card>

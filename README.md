@@ -75,16 +75,31 @@ services don't land without a corresponding `*.test.js`.
 
 ## Environment variables
 
-Copy `.env.example` to `.env` and fill in. Not needed until Milestone 5+.
+Copy `.env.example` to `.env` and fill in.
 
 ```
-FITBIT_CLIENT_ID=
+EXPO_PUBLIC_FITBIT_CLIENT_ID=
 FITBIT_CLIENT_SECRET=
 GOOGLE_MAPS_API_KEY=
 ANTHROPIC_API_KEY=
 ```
 
+The Fitbit client id uses the `EXPO_PUBLIC_` prefix so Expo bundles it
+into the client. That's safe because Fitbit OAuth runs as a public
+client with PKCE — the secret never leaves Fitbit's servers, so
+`FITBIT_CLIENT_SECRET` is unused in the app (kept in `.env.example`
+for completeness only).
+
 `.env` is git-ignored.
+
+### Fitbit dev-console redirect URIs
+
+Register both at dev.fitbit.com → your app → Settings → Redirect URL:
+
+- `wayfarer://fitbit-auth` — for standalone EAS builds
+- `exp://<your-LAN-IP>:8081/--/fitbit-auth` — for Expo Go (LAN IP is
+  printed by `npx expo start`; if it changes between sessions,
+  re-register)
 
 ## Milestone progress
 
@@ -94,7 +109,7 @@ Build order is fixed by the tech spec (§9). Always leave the app working.
 - [x] **M2 — Navigation skeleton.** Three tabs switch on device; every PRD screen exists as a reachable placeholder.
 - [x] **M3 — Onboarding UI.** All 5 onboarding screens rendered with the visual design, Lora + DM Sans loaded, reusable Button / Card / Tag / OnboardingBar.
 - [x] **M4 — Today + Journey UI.** Dummy-data Today (active + empty), Journey map preview, StoryCard reader, JourneyStats. New reusable components: ProgressBar, MapPlaceholder, StatTile, StoryRow. All numbers route through `constants/mockData.js`, swapped for AsyncStorage in M5.
-- [ ] M5 — Fitbit integration. Real OAuth + step count.
+- [x] **M5 — Fitbit integration.** Real Fitbit OAuth (PKCE, public client) via `expo-auth-session`. Tokens in `expo-secure-store`, profile in `AsyncStorage`. New `services/fitbit.js`, `hooks/useFitbit.js` (60s in-memory cache), `storage/secureStore.js` + `userStore.js`, `constants/stride.js`. Today tab shows real steps + 30d-average ratio when connected; falls back to mock + "Tap to connect Fitbit →" link otherwise. StrideConfirm reads real stride from storage.
 - [ ] M6 — Goal setup + maps. Destination search, Directions API, real route on a map.
 - [ ] M7 — Progress tracking. Daily sync, marker moves.
 - [ ] M8 — Storytelling engine. Places API + Anthropic-generated story cards.

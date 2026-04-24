@@ -24,6 +24,7 @@ import {
   mockJourney,
   mockSuggestions,
 } from '../../constants/mockData';
+import useFitbit from '../../hooks/useFitbit';
 
 // Today tab. Active state shows the in-progress journey hero, two stat
 // tiles, the route preview, and the unread story card. Empty state is
@@ -44,6 +45,14 @@ function ActiveToday({ onResetGoal }) {
   const { goal, today, pctComplete } = mockJourney;
   const unread = mockJourney.storyCards.find((c) => !c.read);
 
+  // Real Fitbit data overrides the mock today.steps + dailyAveragePct
+  // when connected. Goal / hero / story / monthly stay mock until M6.
+  const fb = useFitbit();
+  const steps = fb.connected && fb.todaySteps != null ? fb.todaySteps : today.steps;
+  const avgPct = fb.connected && fb.dailyAveragePct != null
+    ? fb.dailyAveragePct
+    : today.dailyAveragePct;
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -63,9 +72,9 @@ function ActiveToday({ onResetGoal }) {
         <View style={styles.statsRow}>
           <Card style={styles.statCard}>
             <Text style={[type.label, styles.statLabel]}>Today</Text>
-            <Text style={styles.statNumberOchre}>{today.steps.toLocaleString('en-US')}</Text>
+            <Text style={styles.statNumberOchre}>{steps.toLocaleString('en-US')}</Text>
             <Text style={[type.bodySmall, styles.statUnit]}>steps</Text>
-            <ProgressBar pct={today.dailyAveragePct} />
+            <ProgressBar pct={avgPct} />
           </Card>
           <Card style={styles.statCard}>
             <Text style={[type.label, styles.statLabel]}>Journey</Text>
@@ -118,6 +127,15 @@ function ActiveToday({ onResetGoal }) {
           <Text style={styles.monthlyAccent}>{today.monthlyMiles} miles</Text> — that&apos;s{' '}
           {today.monthlyComparison}.
         </Text>
+
+        {!fb.connected ? (
+          <Pressable
+            onPress={() => navigation.navigate('Onboarding', { screen: 'FitbitConnect' })}
+            style={styles.connectFitbit}
+          >
+            <Text style={styles.connectFitbitLabel}>Tap to connect Fitbit →</Text>
+          </Pressable>
+        ) : null}
 
         <Pressable onPress={onResetGoal} style={styles.debug}>
           <Text style={styles.debugLabel}>Show empty state →</Text>
@@ -345,5 +363,15 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans.semibold,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
+  },
+  connectFitbit: {
+    marginTop: 16,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  connectFitbitLabel: {
+    color: colors.ochre.soft,
+    fontSize: 12,
+    fontFamily: fonts.sans.semibold,
   },
 });
