@@ -42,10 +42,18 @@ export default function FitbitConnectScreen() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  // makeRedirectUri honours app.json `scheme: "wayfarer"` in standalone
-  // builds (-> wayfarer://fitbit-auth) and the dynamic exp:// URL in
-  // Expo Go. The user must register both at dev.fitbit.com.
-  const redirectUri = makeRedirectUri({ scheme: 'wayfarer', path: 'fitbit-auth' });
+  // `native:` routes correctly in both environments: in Expo Go it
+  // returns `exp://LAN-IP:8081/--/fitbit-auth` (because Expo Go can't
+  // handle custom schemes, and makeRedirectUri auto-detects the dev
+  // URL), and in a standalone EAS build it returns the value verbatim
+  // (`wayfarer://fitbit-auth`). Passing `scheme:` instead forces the
+  // custom scheme in Expo Go too, which Fitbit then rejects because
+  // that URI never actually routes back into Expo Go.
+  const redirectUri = makeRedirectUri({ native: 'wayfarer://fitbit-auth' });
+
+  // Surface the exact value Fitbit will see — both in Metro and on
+  // screen — so a redirect-URI mismatch shows what to register.
+  if (__DEV__) console.log('[Fitbit OAuth] redirect_uri =', redirectUri);
 
   const [request, response, promptAsync] = useAuthRequest(
     {
@@ -142,6 +150,11 @@ export default function FitbitConnectScreen() {
             disabled={!request || busy}
           />
           {error ? <Text style={styles.error}>{error}</Text> : null}
+          {__DEV__ ? (
+            <Text style={styles.redirectDebug} selectable>
+              redirect_uri: {redirectUri}
+            </Text>
+          ) : null}
           <Text style={[type.micro, styles.micro]}>
             We never sell or share your health data
           </Text>
@@ -231,6 +244,13 @@ const styles = StyleSheet.create({
     color: colors.terra.base,
     fontSize: 12,
     textAlign: 'center',
+  },
+  redirectDebug: {
+    color: colors.text.dim,
+    fontSize: 10,
+    fontFamily: 'Courier',
+    textAlign: 'center',
+    marginTop: 4,
   },
   micro: {
     textAlign: 'center',
