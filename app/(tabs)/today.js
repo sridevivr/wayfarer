@@ -12,7 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/Card';
 import GlowPulse from '../../components/GlowPulse';
 import MapPlaceholder from '../../components/MapPlaceholder';
-import ProgressBar from '../../components/ProgressBar';
 import StoryRow from '../../components/StoryRow';
 import Tag from '../../components/Tag';
 import { colors } from '../../constants/colors';
@@ -45,13 +44,10 @@ function ActiveToday({ onResetGoal }) {
   const { goal, today, pctComplete } = mockJourney;
   const unread = mockJourney.storyCards.find((c) => !c.read);
 
-  // Real Fitbit data overrides the mock today.steps + dailyAveragePct
-  // when connected. Goal / hero / story / monthly stay mock until M6.
+  // Real Fitbit data overrides the mock today.steps when connected. Goal
+  // / hero / story / monthly stay mock until M6.
   const fb = useFitbit();
   const steps = fb.connected && fb.todaySteps != null ? fb.todaySteps : today.steps;
-  const avgPct = fb.connected && fb.dailyAveragePct != null
-    ? fb.dailyAveragePct
-    : today.dailyAveragePct;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -64,6 +60,7 @@ function ActiveToday({ onResetGoal }) {
               <View style={styles.heroDot} />
             </GlowPulse>
             <Text style={[type.body, styles.heroSubText]}>
+              {/* TODO: M6 — replace with real goal.daysRemaining from storage */}
               On your way to {shortName(goal.destination)} · {goal.daysRemaining} days to go
             </Text>
           </View>
@@ -74,21 +71,12 @@ function ActiveToday({ onResetGoal }) {
             <Text style={[type.label, styles.statLabel]}>Today</Text>
             <Text style={styles.statNumberOchre}>{steps.toLocaleString('en-US')}</Text>
             <Text style={[type.bodySmall, styles.statUnit]}>steps</Text>
-            <ProgressBar pct={avgPct} />
-            {__DEV__ && fb.error ? (
-              <Text style={styles.fbError} selectable>
-                fitbit err {fb.error?.status ?? ''}: {String(fb.error?.message ?? fb.error)}
-              </Text>
-            ) : null}
-            {__DEV__ && fb.connected && fb.todaySteps == null && !fb.error ? (
-              <Text style={styles.fbNote}>loading real steps…</Text>
-            ) : null}
           </Card>
           <Card style={styles.statCard}>
-            <Text style={[type.label, styles.statLabel]}>Journey</Text>
-            <Text style={styles.statNumberSage}>{pctComplete}%</Text>
-            <Text style={[type.bodySmall, styles.statUnit]}>complete</Text>
-            <ProgressBar pct={pctComplete} />
+            <Text style={[type.label, styles.statLabel]}>Days left</Text>
+            {/* TODO: M6 — replace with real goal.daysRemaining from storage */}
+            <Text style={styles.statNumberSage}>{goal.daysRemaining}</Text>
+            <Text style={[type.bodySmall, styles.statUnit]}>to destination</Text>
           </Card>
         </View>
 
@@ -381,17 +369,5 @@ const styles = StyleSheet.create({
     color: colors.ochre.soft,
     fontSize: 12,
     fontFamily: fonts.sans.semibold,
-  },
-  fbError: {
-    marginTop: 6,
-    fontSize: 9,
-    color: colors.terra.base,
-    fontFamily: 'Courier',
-  },
-  fbNote: {
-    marginTop: 6,
-    fontSize: 9,
-    color: colors.text.dim,
-    fontFamily: fonts.sans.regular,
   },
 });

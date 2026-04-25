@@ -107,6 +107,7 @@ export default function useFitbit() {
         return;
       }
       setConnected(true);
+      setError(null);
       if (cache && Date.now() - cache.fetchedAt < TTL_MS) {
         setLoading(false);
         return;

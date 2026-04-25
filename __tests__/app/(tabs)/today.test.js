@@ -19,10 +19,16 @@ describe('TodayScreen — active state (default)', () => {
     ).toBeTruthy();
   });
 
-  it("shows today's steps and the journey percent", () => {
-    const { getByText } = render(<TodayScreen />);
+  it("shows today's steps and the days-left tile", () => {
+    const { getByText, getAllByText } = render(<TodayScreen />);
     expect(getByText(mockJourney.today.steps.toLocaleString('en-US'))).toBeTruthy();
-    expect(getByText(`${mockJourney.pctComplete}%`)).toBeTruthy();
+    expect(getByText('Days left')).toBeTruthy();
+    expect(getByText('to destination')).toBeTruthy();
+    // daysRemaining renders twice — in the hero ("· 53 days to go")
+    // and in the new tile.
+    expect(
+      getAllByText(String(mockJourney.goal.daysRemaining)).length
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it('Open map link navigates to the Journey tab', () => {

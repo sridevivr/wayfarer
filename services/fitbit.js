@@ -155,7 +155,12 @@ export async function getStepHistory(endDate, days = 30) {
   );
   const series = json?.['activities-steps'] ?? [];
   const parsed = series.map((d) => Number(d.value) || 0);
-  if (__DEV__) console.log('[fitbit] history', startDate, '→', endDate, 'length =', parsed.length, 'last 3 =', parsed.slice(-3));
+  if (__DEV__) {
+    const sum = parsed.reduce((a, b) => a + b, 0);
+    const avg = parsed.length ? Math.round(sum / parsed.length) : 0;
+    console.log('[fitbit] history', startDate, '→', endDate,
+      'length =', parsed.length, 'sum =', sum, 'avg =', avg);
+  }
   return parsed;
 }
 
