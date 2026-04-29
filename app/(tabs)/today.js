@@ -140,9 +140,11 @@ function ActiveToday({ onResetGoal }) {
           <Text style={styles.setDestinationLabel}>Set a destination →</Text>
         </Pressable>
 
-        <Pressable onPress={onResetGoal} style={styles.debug}>
-          <Text style={styles.debugLabel}>Show empty state →</Text>
-        </Pressable>
+        {__DEV__ ? (
+          <Pressable onPress={onResetGoal} style={styles.debug}>
+            <Text style={styles.debugLabel}>Show empty state →</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -198,9 +200,11 @@ function EmptyToday({ onSetGoal }) {
           />
         ))}
 
-        <Pressable onPress={onSetGoal} style={styles.debug}>
-          <Text style={styles.debugLabel}>Show active state →</Text>
-        </Pressable>
+        {__DEV__ ? (
+          <Pressable onPress={onSetGoal} style={styles.debug}>
+            <Text style={styles.debugLabel}>Show active state →</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
