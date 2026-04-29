@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import {
+  _resetRefreshPromiseForTests,
   exchangeCode,
   FITBIT_BASE,
   FITBIT_TOKEN_URL,
@@ -22,6 +23,7 @@ function jsonResponse(body, status = 200) {
 
 beforeEach(() => {
   SecureStore.__reset();
+  _resetRefreshPromiseForTests();
   global.fetch = jest.fn();
 });
 
@@ -111,6 +113,68 @@ describe('getTodaySteps + auth wrapper', () => {
 
     await expect(getTodaySteps()).rejects.toBeDefined();
     expect(await getTokens()).toBeNull();
+  });
+
+  it('serializes parallel 401s through a single refresh request', async () => {
+    // Reproduces the M5 fetchAll bug: useFitbit fires three calls in
+    // Promise.all. When the access token has expired, all three see
+    // 401 and each used to fire its own refresh — Fitbit returns 409
+    // Concurrent refresh token requests on the losers. After the fix,
+    // exactly one refresh goes out and every retry uses the same new
+    // access token.
+    await saveTokens({ access: 'OLD', refresh: 'R1' });
+    fetch
+      // Two parallel first attempts both 401.
+      .mockResolvedValueOnce(jsonResponse({}, 401))
+      .mockResolvedValueOnce(jsonResponse({}, 401))
+      // Single refresh response shared by both.
+      .mockResolvedValueOnce(
+        jsonResponse({ access_token: 'NEW', refresh_token: 'R2', expires_in: 28800 })
+      )
+      // Both retries succeed.
+      .mockResolvedValueOnce(jsonResponse({ summary: { steps: 100 } }))
+      .mockResolvedValueOnce(jsonResponse({ summary: { steps: 200 } }));
+
+    const [a, b] = await Promise.all([getTodaySteps(), getTodaySteps()]);
+
+    expect(a).toEqual({ steps: 100 });
+    expect(b).toEqual({ steps: 200 });
+
+    const tokenCalls = fetch.mock.calls.filter(([url]) => url === FITBIT_TOKEN_URL);
+    expect(tokenCalls).toHaveLength(1);
+
+    // Both retries used the new access token.
+    const retryAuthHeaders = fetch.mock.calls
+      .filter(([url]) => url !== FITBIT_TOKEN_URL)
+      .slice(2) // skip the two original 401s
+      .map(([, init]) => init.headers.Authorization);
+    expect(retryAuthHeaders).toEqual(['Bearer NEW', 'Bearer NEW']);
+    expect((await getTokens()).access).toBe('NEW');
+  });
+
+  it('clears the refresh slot after failure so the next attempt can refresh again', async () => {
+    // First attempt: refresh fails, tokens cleared, error surfaced.
+    await saveTokens({ access: 'OLD', refresh: 'BAD' });
+    fetch
+      .mockResolvedValueOnce(jsonResponse({}, 401))
+      .mockResolvedValueOnce(jsonResponse({ errors: ['invalid_grant'] }, 400));
+    await expect(getTodaySteps()).rejects.toBeDefined();
+    expect(await getTokens()).toBeNull();
+
+    // User reconnects. The next 401 must initiate a brand new refresh —
+    // if the failed promise lingered, the call would hang or rethrow
+    // the previous error instead of trying again.
+    await saveTokens({ access: 'OLD2', refresh: 'R3' });
+    fetch
+      .mockResolvedValueOnce(jsonResponse({}, 401))
+      .mockResolvedValueOnce(
+        jsonResponse({ access_token: 'NEW2', refresh_token: 'R4', expires_in: 28800 })
+      )
+      .mockResolvedValueOnce(jsonResponse({ summary: { steps: 5000 } }));
+
+    const out = await getTodaySteps();
+    expect(out).toEqual({ steps: 5000 });
+    expect((await getTokens()).access).toBe('NEW2');
   });
 });
 

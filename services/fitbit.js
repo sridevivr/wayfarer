@@ -101,6 +101,39 @@ async function authedGet(path, accessToken) {
 }
 
 // Wraps a function-of-access-token. On 401, refresh + retry once.
+//
+// All concurrent 401s share a single refresh request via the
+// module-level `refreshPromise` — Fitbit returns 409 Concurrent
+// refresh token requests if multiple in-flight calls each try to
+// rotate the refresh token in parallel (e.g. the three calls in
+// useFitbit's Promise.all when an access token expires).
+let refreshPromise = null;
+
+async function getRefreshedToken(currentRefresh) {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const next = await refreshAccessToken(currentRefresh);
+        await saveTokens({
+          access: next.access,
+          refresh: next.refresh ?? currentRefresh,
+        });
+        return next.access;
+      } catch (err) {
+        await clearTokens();
+        throw err;
+      }
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+export function _resetRefreshPromiseForTests() {
+  refreshPromise = null;
+}
+
 export async function withAuth(fn) {
   const tokens = await getTokens();
   if (!tokens) throw new Error('Not connected to Fitbit');
@@ -108,15 +141,8 @@ export async function withAuth(fn) {
     return await fn(tokens.access);
   } catch (err) {
     if (err?.status !== 401 || !tokens.refresh) throw err;
-    let next;
-    try {
-      next = await refreshAccessToken(tokens.refresh);
-    } catch (refreshErr) {
-      await clearTokens();
-      throw refreshErr;
-    }
-    await saveTokens({ access: next.access, refresh: next.refresh ?? tokens.refresh });
-    return fn(next.access);
+    const newAccess = await getRefreshedToken(tokens.refresh);
+    return fn(newAccess);
   }
 }
 
