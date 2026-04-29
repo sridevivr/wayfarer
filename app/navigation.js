@@ -15,7 +15,8 @@ import StrideConfirmScreen from './onboarding/stride-confirm';
 import OnboardHomeScreen from './onboarding/onboard-home';
 import OnboardPlacesScreen from './onboarding/onboard-places';
 
-import DestSearchScreen from './goal/dest-search';
+import OriginScreen from './goal/origin';
+import DestinationScreen from './goal/destination';
 import RouteSelectScreen from './goal/route-select';
 import GoalConfirmScreen from './goal/goal-confirm';
 
@@ -68,8 +69,9 @@ function OnboardingStack() {
 const GoalStackNav = createNativeStackNavigator();
 function GoalStack() {
   return (
-    <GoalStackNav.Navigator screenOptions={stackScreenOptions} initialRouteName="DestSearch">
-      <GoalStackNav.Screen name="DestSearch" component={DestSearchScreen} options={{ title: 'Destination' }} />
+    <GoalStackNav.Navigator screenOptions={stackScreenOptions} initialRouteName="Origin">
+      <GoalStackNav.Screen name="Origin" component={OriginScreen} options={{ title: 'Origin' }} />
+      <GoalStackNav.Screen name="Destination" component={DestinationScreen} options={{ title: 'Destination' }} />
       <GoalStackNav.Screen name="RouteSelect" component={RouteSelectScreen} options={{ title: 'Route' }} />
       <GoalStackNav.Screen name="GoalConfirm" component={GoalConfirmScreen} options={{ title: 'Confirm' }} />
     </GoalStackNav.Navigator>

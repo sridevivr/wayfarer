@@ -65,7 +65,12 @@ Jest with the `jest-expo` preset. Test tree mirrors the source tree exactly: `co
 
 ## Environment
 
-`.env` is gitignored. Copy from `.env.example` and fill in. The `EXPO_PUBLIC_` prefix on `EXPO_PUBLIC_FITBIT_CLIENT_ID` is intentional (Expo bundles it into the client; PKCE makes that safe). Register both redirect URIs at dev.fitbit.com:
+`.env` is gitignored. Copy from `.env.example` and fill in. Two keys use the `EXPO_PUBLIC_` prefix so Expo bundles them into the client:
+
+- `EXPO_PUBLIC_FITBIT_CLIENT_ID` — Fitbit OAuth runs as a public client with PKCE; the bundled id is the public half of that flow.
+- `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` — read by `PlaceAutocomplete` to call the Google Places Autocomplete + Details endpoints on-device. Restrict the key by iOS bundle id in the GCP console; that's what keeps it safe to bundle.
+
+Register both Fitbit redirect URIs at dev.fitbit.com:
 
 - `wayfarer://fitbit-auth` (dev client)
 - `exp://<LAN-IP>:8081/--/fitbit-auth` (Expo Go — re-register if the LAN IP changes)

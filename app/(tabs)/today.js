@@ -133,6 +133,13 @@ function ActiveToday({ onResetGoal }) {
           </Pressable>
         ) : null}
 
+        <Pressable
+          onPress={() => navigation.navigate('GoalSetup', { screen: 'Origin' })}
+          style={styles.setDestination}
+        >
+          <Text style={styles.setDestinationLabel}>Set a destination →</Text>
+        </Pressable>
+
         <Pressable onPress={onResetGoal} style={styles.debug}>
           <Text style={styles.debugLabel}>Show empty state →</Text>
         </Pressable>
@@ -366,6 +373,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   connectFitbitLabel: {
+    color: colors.ochre.soft,
+    fontSize: 12,
+    fontFamily: fonts.sans.semibold,
+  },
+  setDestination: {
+    marginTop: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  setDestinationLabel: {
     color: colors.ochre.soft,
     fontSize: 12,
     fontFamily: fonts.sans.semibold,

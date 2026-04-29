@@ -124,7 +124,7 @@ Copy `.env.example` to `.env` and fill in.
 ```
 EXPO_PUBLIC_FITBIT_CLIENT_ID=
 FITBIT_CLIENT_SECRET=
-GOOGLE_MAPS_API_KEY=
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=
 ANTHROPIC_API_KEY=
 ```
 
@@ -133,6 +133,10 @@ into the client. That's safe because Fitbit OAuth runs as a public
 client with PKCE — the secret never leaves Fitbit's servers, so
 `FITBIT_CLIENT_SECRET` is unused in the app (kept in `.env.example`
 for completeness only).
+
+The Google Maps key follows the same pattern: `EXPO_PUBLIC_` so
+`PlaceAutocomplete` can read it on-device. Restrict the key by iOS
+bundle id in the GCP console; that's what keeps it safe to bundle.
 
 `.env` is git-ignored.
 
