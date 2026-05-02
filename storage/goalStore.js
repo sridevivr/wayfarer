@@ -30,6 +30,15 @@ export async function setActiveGoal(goal) {
   return goal;
 }
 
+// Read → shallow-merge `route` → write. Used by Phase 2's RouteSelect
+// screen so picking a route doesn't reset the rest of the draft.
+export async function setActiveGoalRoute(route) {
+  const current = (await getActiveGoal()) ?? {};
+  const next = { ...current, route };
+  await AsyncStorage.setItem(ACTIVE_KEY, JSON.stringify(next));
+  return next;
+}
+
 export async function clearActiveGoal() {
   await AsyncStorage.removeItem(ACTIVE_KEY);
 }

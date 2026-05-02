@@ -96,28 +96,29 @@ describe('DestinationScreen', () => {
     expect(queryByTestId('suggestions-wrap')).toBeNull();
   });
 
-  it('selecting a suggestion persists destination and dismisses the modal', async () => {
+  it('selecting a suggestion persists destination and navigates to RouteSelect', async () => {
     await seedGoal(massOrigin);
     const { findByTestId } = render(<DestinationScreen />);
     const acadia = await findByTestId('suggestion-acadia-suggestion');
     await act(async () => {
       fireEvent.press(acadia);
     });
-    await waitFor(() => expect(mockParentGoBack).toHaveBeenCalled());
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('RouteSelect'));
     const goal = await getActiveGoal();
     expect(goal.destination.name).toBe('Acadia National Park');
     expect(goal.origin.name).toBe('Boston');
     expect(goal.status).toBe('draft');
+    expect(mockParentGoBack).not.toHaveBeenCalled();
   });
 
-  it('selecting a free-search result persists destination and dismisses the modal', async () => {
+  it('selecting a free-search result persists destination and navigates to RouteSelect', async () => {
     await seedGoal(texasOrigin);
     const { findByTestId } = render(<DestinationScreen />);
     const auto = await findByTestId('destination-autocomplete');
     await act(async () => {
       fireEvent.press(auto);
     });
-    await waitFor(() => expect(mockParentGoBack).toHaveBeenCalled());
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('RouteSelect'));
     const goal = await getActiveGoal();
     expect(goal.destination.name).toBe('Free Search Pick');
     expect(goal.origin.name).toBe('Austin');

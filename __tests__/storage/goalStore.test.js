@@ -4,6 +4,7 @@ import {
   getActiveGoal,
   getLastOrigin,
   setActiveGoal,
+  setActiveGoalRoute,
   setLastOrigin,
 } from '../../storage/goalStore';
 
@@ -48,6 +49,32 @@ describe('goalStore — active goal', () => {
     await setActiveGoal({ origin: place(), status: 'draft' });
     await clearActiveGoal();
     expect(await getActiveGoal()).toBeNull();
+  });
+});
+
+describe('goalStore — setActiveGoalRoute', () => {
+  it('merges route onto an existing draft without resetting other fields', async () => {
+    await setActiveGoal({
+      origin: place({ name: 'O' }),
+      destination: place({ name: 'D' }),
+      route: null,
+      status: 'draft',
+      createdAt: '2026-04-29T00:00:00.000Z',
+    });
+    const route = { label: 'Fastest', distanceMeters: 100, durationSeconds: 60, polyline: [] };
+    await setActiveGoalRoute(route);
+    const goal = await getActiveGoal();
+    expect(goal.route).toEqual(route);
+    expect(goal.origin.name).toBe('O');
+    expect(goal.destination.name).toBe('D');
+    expect(goal.status).toBe('draft');
+    expect(goal.createdAt).toBe('2026-04-29T00:00:00.000Z');
+  });
+
+  it('creates a goal with only the route field when none exists yet', async () => {
+    const route = { label: 'Fastest', distanceMeters: 100 };
+    await setActiveGoalRoute(route);
+    expect(await getActiveGoal()).toEqual({ route });
   });
 });
 

@@ -4,9 +4,12 @@ import { colors } from '../constants/colors';
 // Standard Card: bgCard fill, subtle border, 12px radius.
 // When `glow` is true, uses the brighter ochre border + shadow for
 // "highlighted" cards (e.g. the stride number on onboarding).
-export default function Card({ children, glow = false, style }) {
+export default function Card({ children, glow = false, style, testID }) {
   return (
-    <View style={[styles.card, glow ? styles.glow : styles.plain, style]}>
+    <View
+      style={[styles.card, glow ? styles.glow : styles.plain, style]}
+      testID={testID}
+    >
       {children}
     </View>
   );

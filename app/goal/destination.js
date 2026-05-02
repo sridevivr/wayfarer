@@ -38,7 +38,7 @@ export default function DestinationScreen() {
     const next = { ...current, destination };
     await setActiveGoal(next);
     if (__DEV__) console.log('[goal] draft saved:', JSON.stringify(next));
-    navigation.getParent()?.goBack();
+    navigation.navigate('RouteSelect');
   }
 
   const suggestions = suggestionsForOrigin(origin);
