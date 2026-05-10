@@ -1,5 +1,4 @@
 import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -12,58 +11,49 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/Card';
 import GlowPulse from '../../components/GlowPulse';
 import MapPlaceholder from '../../components/MapPlaceholder';
-import StoryRow from '../../components/StoryRow';
-import Tag from '../../components/Tag';
 import { colors } from '../../constants/colors';
 import { fonts, type } from '../../constants/fonts';
-import {
-  formatStepsApprox,
-  milesToSteps,
-  mockCurated,
-  mockJourney,
-  mockSuggestions,
-} from '../../constants/mockData';
+import { mockJourney } from '../../constants/mockData';
+import useActiveGoal from '../../hooks/useActiveGoal';
 import useFitbit from '../../hooks/useFitbit';
 
-// Today tab. Active state shows the in-progress journey hero, two stat
-// tiles, the route preview, and the unread story card. Empty state is
-// a search field and a list of suggested + curated routes that all push
-// into GoalSetup. M4 toggles between them via a debug ghost link at the
-// bottom; M5 reads the real "is there a goal?" state from storage.
+// Today tab. When a real active goal exists in storage, ActiveToday
+// reads from useActiveGoal (real destination, real days-remaining,
+// real percentage) and from useFitbit (today's step count). When no
+// active goal exists, falls back to a minimal "Set a destination →"
+// empty state.
+//
+// Story-waiting card and the monthly insight line still read from
+// mockJourney — story content is M8 territory; monthly aggregate is a
+// later milestone.
 export default function TodayScreen() {
-  const [hasGoal, setHasGoal] = useState(true);
-  return hasGoal ? (
-    <ActiveToday onResetGoal={() => setHasGoal(false)} />
-  ) : (
-    <EmptyToday onSetGoal={() => setHasGoal(true)} />
-  );
+  const ag = useActiveGoal();
+  if (ag.isActive) return <ActiveToday ag={ag} />;
+  return <NoGoalToday />;
 }
 
-function ActiveToday({ onResetGoal }) {
+function ActiveToday({ ag }) {
   const navigation = useNavigation();
-  const { goal, today, pctComplete } = mockJourney;
-  const unread = mockJourney.storyCards.find((c) => !c.read);
-
-  // Real Fitbit data overrides the mock today.steps when connected. Goal
-  // / hero / story / monthly stay mock until M6.
   const fb = useFitbit();
-  const steps = fb.connected && fb.todaySteps != null ? fb.todaySteps : today.steps;
+  const { goal, pctComplete, daysRemaining } = ag;
+  const steps = fb.connected && fb.todaySteps != null ? fb.todaySteps : 0;
+  const unread = mockJourney.storyCards.find((c) => !c.read);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
-          <Text style={[type.label, styles.heroLabel]}>You are currently in</Text>
-          <Text style={[type.h1, styles.heroTitle]}>{goal.currentLocation}</Text>
           <View style={styles.heroSubRow}>
             <GlowPulse style={styles.heroDotWrap}>
               <View style={styles.heroDot} />
             </GlowPulse>
-            <Text style={[type.body, styles.heroSubText]}>
-              {/* TODO: M6 — replace with real goal.daysRemaining from storage */}
-              On your way to {shortName(goal.destination)} · {goal.daysRemaining} days to go
+            <Text style={[type.h2, styles.heroTitle]}>
+              On your way to {shortName(goal.destination.name)}
             </Text>
           </View>
+          <Text style={[type.body, styles.heroSubText]}>
+            {daysRemaining != null ? `${daysRemaining} days to go` : 'Calibrating pace…'}
+          </Text>
         </View>
 
         <View style={styles.statsRow}>
@@ -74,8 +64,9 @@ function ActiveToday({ onResetGoal }) {
           </Card>
           <Card style={styles.statCard}>
             <Text style={[type.label, styles.statLabel]}>Days left</Text>
-            {/* TODO: M6 — replace with real goal.daysRemaining from storage */}
-            <Text style={styles.statNumberSage}>{goal.daysRemaining}</Text>
+            <Text style={styles.statNumberSage}>
+              {daysRemaining != null ? daysRemaining : '—'}
+            </Text>
             <Text style={[type.bodySmall, styles.statUnit]}>to destination</Text>
           </Card>
         </View>
@@ -84,10 +75,10 @@ function ActiveToday({ onResetGoal }) {
         <Pressable onPress={() => navigation.navigate('Journey')}>
           {({ pressed }) => (
             <Card glow style={[styles.routeCard, pressed && styles.cardPressed]}>
-              <MapPlaceholder height={100} pct={pctComplete} glow={false} />
+              <MapPlaceholder height={100} pct={pctComplete ?? 0} glow={false} />
               <View style={styles.routeFooter}>
                 <Text style={type.bodySmall}>
-                  {shortName(goal.origin)} → {shortName(goal.destination)}
+                  {shortName(goal.origin.name)} → {shortName(goal.destination.name)}
                 </Text>
                 <Text style={styles.openLink}>Open map →</Text>
               </View>
@@ -120,8 +111,8 @@ function ActiveToday({ onResetGoal }) {
 
         <Text style={styles.monthly}>
           This month you&apos;ve walked{' '}
-          <Text style={styles.monthlyAccent}>{today.monthlyMiles} miles</Text> — that&apos;s{' '}
-          {today.monthlyComparison}.
+          <Text style={styles.monthlyAccent}>{mockJourney.today.monthlyMiles} miles</Text> — that&apos;s{' '}
+          {mockJourney.today.monthlyComparison}.
         </Text>
 
         {!fb.connected ? (
@@ -132,77 +123,37 @@ function ActiveToday({ onResetGoal }) {
             <Text style={styles.connectFitbitLabel}>Tap to connect Fitbit →</Text>
           </Pressable>
         ) : null}
-
-        <Pressable
-          onPress={() => navigation.navigate('GoalSetup', { screen: 'Origin' })}
-          style={styles.setDestination}
-        >
-          <Text style={styles.setDestinationLabel}>Set a destination →</Text>
-        </Pressable>
-
-        {__DEV__ ? (
-          <Pressable onPress={onResetGoal} style={styles.debug}>
-            <Text style={styles.debugLabel}>Show empty state →</Text>
-          </Pressable>
-        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function EmptyToday({ onSetGoal }) {
+function NoGoalToday() {
   const navigation = useNavigation();
+  const fb = useFitbit();
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={[type.h1, styles.greeting]}>Good morning.</Text>
-        <Text style={[type.body, styles.greetingSub]}>Where do you want to walk to?</Text>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={[type.h1, styles.emptyGreeting]}>No active goal yet.</Text>
+        <Text style={[type.body, styles.emptyBody]}>
+          Pick a destination to start a virtual journey. Your real steps will
+          carry you there.
+        </Text>
 
         <Pressable
-          onPress={() => navigation.navigate('GoalSetup')}
-          style={({ pressed }) => [styles.searchPill, pressed && styles.cardPressed]}
+          onPress={() => navigation.navigate('GoalSetup', { screen: 'Origin' })}
+          style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+          testID="empty-set-destination"
         >
-          <Text style={styles.searchIcon}>⌕</Text>
-          <Text style={styles.searchPlaceholder}>Search any destination...</Text>
+          <Text style={styles.ctaLabel}>Set a destination →</Text>
         </Pressable>
 
-        <Text style={[type.label, styles.section]}>Suggested for you</Text>
-        {mockSuggestions.map((s) => (
+        {!fb.connected ? (
           <Pressable
-            key={s.id}
-            onPress={() => navigation.navigate('GoalSetup')}
-            style={({ pressed }) => pressed && styles.cardPressed}
+            onPress={() => navigation.navigate('Onboarding', { screen: 'FitbitConnect' })}
+            style={styles.connectFitbit}
           >
-            <Card style={styles.suggestCard}>
-              <View style={styles.suggestHeader}>
-                <Text style={styles.suggestName}>{s.name}</Text>
-                <Tag label={s.tag} color={s.tagColor} />
-              </View>
-              <Text style={[type.bodySmall, styles.suggestSub]}>
-                {s.miles.toLocaleString('en-US')} mi · {formatStepsApprox(milesToSteps(s.miles))} · ~{s.days} days
-              </Text>
-            </Card>
-          </Pressable>
-        ))}
-
-        <View style={styles.divider} />
-
-        <Text style={[type.label, styles.section]}>Curated routes</Text>
-        {mockCurated.map((r) => (
-          <StoryRow
-            key={r.id}
-            icon="◇"
-            accent="sage"
-            title={r.name}
-            subtitle={r.subtitle}
-            onPress={() => navigation.navigate('GoalSetup')}
-            style={{ marginBottom: 8 }}
-          />
-        ))}
-
-        {__DEV__ ? (
-          <Pressable onPress={onSetGoal} style={styles.debug}>
-            <Text style={styles.debugLabel}>Show active state →</Text>
+            <Text style={styles.connectFitbitLabel}>Tap to connect Fitbit →</Text>
           </Pressable>
         ) : null}
       </ScrollView>
@@ -211,7 +162,7 @@ function EmptyToday({ onSetGoal }) {
 }
 
 function shortName(full) {
-  return full.split(',')[0];
+  return full ? full.split(',')[0] : '';
 }
 
 const styles = StyleSheet.create({
@@ -231,14 +182,10 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8,
   },
-  heroLabel: { marginBottom: 6 },
-  heroTitle: { marginBottom: 6, fontSize: 22, lineHeight: 28 },
-  heroSubRow: { flexDirection: 'row', alignItems: 'center' },
-  heroSubText: { flexShrink: 1 },
-  heroDotWrap: {
-    marginRight: 8,
-    flexShrink: 0,
-  },
+  heroTitle: { flexShrink: 1 },
+  heroSubRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  heroSubText: { color: colors.text.secondary },
+  heroDotWrap: { marginRight: 10, flexShrink: 0 },
   heroDot: {
     width: 8,
     height: 8,
@@ -326,51 +273,6 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
 
-  greeting: { marginBottom: 4, fontSize: 22, lineHeight: 28 },
-  greetingSub: { marginBottom: 20 },
-  searchPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 11,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: colors.border.subtle,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    marginBottom: 24,
-  },
-  searchIcon: { color: colors.text.dim, fontSize: 14 },
-  searchPlaceholder: { color: colors.text.dim, fontSize: 13, fontFamily: fonts.sans.regular },
-
-  suggestCard: { marginBottom: 10 },
-  suggestHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  suggestName: {
-    fontFamily: fonts.serif.medium,
-    fontSize: 13,
-    color: colors.text.primary,
-    flex: 1,
-    lineHeight: 18,
-  },
-  suggestSub: { marginTop: 6 },
-
-  debug: {
-    marginTop: 24,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  debugLabel: {
-    color: colors.text.dim,
-    fontSize: 11,
-    fontFamily: fonts.sans.semibold,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
   connectFitbit: {
     marginTop: 16,
     paddingVertical: 8,
@@ -381,14 +283,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: fonts.sans.semibold,
   },
-  setDestination: {
-    marginTop: 12,
-    paddingVertical: 8,
+
+  emptyGreeting: { marginTop: 24, marginBottom: 10, fontSize: 24, lineHeight: 30 },
+  emptyBody: { marginBottom: 28 },
+  cta: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: colors.ochre.base,
     alignItems: 'center',
   },
-  setDestinationLabel: {
-    color: colors.ochre.soft,
-    fontSize: 12,
+  ctaPressed: { backgroundColor: colors.ochre.soft },
+  ctaLabel: {
     fontFamily: fonts.sans.semibold,
+    fontSize: 14,
+    color: colors.bg.deep,
+    letterSpacing: 0.2,
   },
 });

@@ -39,6 +39,17 @@ export async function setActiveGoalRoute(route) {
   return next;
 }
 
+// Flip status from 'draft' → 'active'. Phase 3's GoalConfirm calls this
+// once the user has approved the summary. Throws if there's no goal in
+// storage — callers shouldn't reach this state in practice.
+export async function activateGoal() {
+  const current = await getActiveGoal();
+  if (!current) throw new Error('No active goal to activate');
+  const next = { ...current, status: 'active' };
+  await AsyncStorage.setItem(ACTIVE_KEY, JSON.stringify(next));
+  return next;
+}
+
 export async function clearActiveGoal() {
   await AsyncStorage.removeItem(ACTIVE_KEY);
 }

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  activateGoal,
   clearActiveGoal,
   getActiveGoal,
   getLastOrigin,
@@ -75,6 +76,30 @@ describe('goalStore — setActiveGoalRoute', () => {
     const route = { label: 'Fastest', distanceMeters: 100 };
     await setActiveGoalRoute(route);
     expect(await getActiveGoal()).toEqual({ route });
+  });
+});
+
+describe('goalStore — activateGoal', () => {
+  it('flips status from draft to active without touching other fields', async () => {
+    await setActiveGoal({
+      origin: place({ name: 'O' }),
+      destination: place({ name: 'D' }),
+      route: { label: 'Fastest', distanceMeters: 100 },
+      status: 'draft',
+      createdAt: '2026-04-29T00:00:00.000Z',
+    });
+    const out = await activateGoal();
+    expect(out.status).toBe('active');
+    const goal = await getActiveGoal();
+    expect(goal.status).toBe('active');
+    expect(goal.origin.name).toBe('O');
+    expect(goal.destination.name).toBe('D');
+    expect(goal.route.label).toBe('Fastest');
+    expect(goal.createdAt).toBe('2026-04-29T00:00:00.000Z');
+  });
+
+  it('throws when no goal exists', async () => {
+    await expect(activateGoal()).rejects.toThrow(/No active goal/);
   });
 });
 
